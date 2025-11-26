@@ -1,0 +1,45 @@
+version: "3.9"
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: sqlserver
+    ports:
+      - "1433:1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "YourStrong!Passw0rd"
+    volumes:
+      - ./sql:/usr/src/app/sql
+    healthcheck:
+    test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P 'YourStrong!Passw0rd' -Q 'SELECT 1' || exit 1"]
+    interval: 10s
+    timeout: 3s
+    retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: etl_app
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      # MSSQL connection
+      MSSQL_SERVER: "sqlserver"
+      MSSQL_DATABASE: "etl_test"
+      MSSQL_USER: "sa"
+      MSSQL_PASSWORD: "YourStrong!Passw0rd"
+
+      # Logging
+      LOG_LEVEL: "INFO"
+
+    volumes:
+      - ./src:/app/src
+      - ./sample_data:/app/sample_data
+      - ./output:/app/output
+      - ./sql:/app/sql
+
+    working_dir: /app
+    command: tail -f /dev/null
