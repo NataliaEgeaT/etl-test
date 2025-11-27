@@ -3,3 +3,5 @@ pyarrow>=14.0.0
 duckdb>=0.9.0
 pyodbc
 pytest
+duckdb==1.1.0
+

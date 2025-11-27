@@ -5,7 +5,7 @@ import pandas as pd
 
 from src.api_client import APIClient
 from src.transforms import normalize_orders, dedupe
-from src.db import load_users, load_products
+from src.db import init_database, load_users, load_products
 from src.utils import configure_logging
 
 BASE_DIR = Path(__file__).resolve().parents[1]
@@ -40,12 +40,16 @@ def run_etl(since=None):
     configure_logging()
     logging.info(f"ETL started | since={since}")
 
+    # Initialize DuckDB (creates tables + loads sample data if empty)
+    init_database()
+
     # Extract
     api = APIClient(SAMPLE_DATA / "api_orders.json")
     raw_orders = api.get_orders()
 
     save_raw(raw_orders)
 
+    # Dimension data
     users_df = load_users()
     products_df = load_products()
 
@@ -73,3 +77,4 @@ if __name__ == "__main__":
     parser.add_argument("--since", required=False)
     args = parser.parse_args()
     run_etl(since=args.since)
+
