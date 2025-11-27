@@ -74,7 +74,7 @@ Outputs:
 output/raw/
 output/curated/date=YYYY-MM-DD/
 
-# Run the Project Using Docker (Optional)
+# Run the Project Using Docker
 
 Build:
 ```
@@ -93,7 +93,7 @@ docker-compose run --rm app python -m src.etl_job --since "2025-01-01T00:00:00Z"
 
 # Run Tests
 ```
-pytest -q
+PYTHONPATH=. pytest -q
 ```
 
 # SQL – Warehouse Tables

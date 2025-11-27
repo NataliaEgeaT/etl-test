@@ -1,12 +1,29 @@
 FROM python:3.11-slim
 
-# System dependencies for pyodbc
-RUN apt-get update && \
-    apt-get install -y unixodbc unixodbc-dev curl gnupg && \
-    curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
-    curl https://packages.microsoft.com/config/debian/12/prod.list > /etc/apt/sources.list.d/mssql-release.list && \
-    apt-get update && ACCEPT_EULA=Y apt-get install -y msodbcsql17 mssql-tools && \
-    apt-get clean
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install FreeTDS + ODBC
+RUN apt-get update && apt-get install -y \
+    freetds-dev \
+    freetds-bin \
+    tdsodbc \
+    unixodbc \
+    unixodbc-dev \
+    python3-dev \
+    build-essential \
+    iputils-ping \
+    netcat-traditional \
+    && rm -rf /var/lib/apt/lists/*
+
+# Configure FreeTDS driver in ODBC
+RUN echo "[FreeTDS]\n\
+Description=FreeTDS MSSQL Driver\n\
+Driver=/usr/lib/odbc/libtdsodbc.so\n\
+Setup=/usr/lib/odbc/libtdsS.so\n\
+UsageCount=1" >> /etc/odbcinst.ini
+
+# Add freetds.conf with correct settings for SQL Server 2019
+COPY freetds.conf /etc/freetds/freetds.conf
 
 WORKDIR /app
 
@@ -20,4 +37,6 @@ COPY output ./output
 
 ENV PYTHONPATH=/app
 
-CMD ["python", "-m", "src.etl_job"]
+CMD ["python3", "-m", "src.etl_job"]
+
+
