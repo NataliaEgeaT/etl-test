@@ -100,3 +100,15 @@ def test_api_client_reads_file(tmp_path):
     data = client.get_orders()
 
     assert data[0]["order_id"] == "o_1"
+
+def test_incremental_filter():
+    raw = [
+        {"order_id": "A1", "created_at": "2025-01-01T00:00:00Z", "items": []},
+        {"order_id": "A2", "created_at": "2026-01-01T00:00:00Z", "items": []}
+    ]
+
+    orders, _ = normalize_orders(raw)
+
+    filtered = orders[orders["created_at"] > "2025-06-01T00:00:00Z"]
+
+    assert set(filtered["order_id"]) == {"A2"}

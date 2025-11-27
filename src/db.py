@@ -1,5 +1,4 @@
 import duckdb
-import pandas as pd
 import os
 
 DB_PATH = "duckdb_db/warehouse.db"

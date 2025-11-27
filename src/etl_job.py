@@ -1,11 +1,10 @@
 import argparse
 import logging
 from pathlib import Path
-import pandas as pd
 
 from src.api_client import APIClient
 from src.transforms import normalize_orders, dedupe
-from src.db import init_database, load_users, load_products
+from src.db import init_database
 from src.utils import configure_logging
 
 BASE_DIR = Path(__file__).resolve().parents[1]
@@ -48,10 +47,6 @@ def run_etl(since=None):
     raw_orders = api.get_orders()
 
     save_raw(raw_orders)
-
-    # Dimension data
-    users_df = load_users()
-    products_df = load_products()
 
     # Transform
     orders_df, items_df = normalize_orders(raw_orders)
