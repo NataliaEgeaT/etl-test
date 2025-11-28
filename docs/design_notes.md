@@ -1,174 +1,104 @@
 1. Architecture Overview
+The pipeline follows a clean Extract → Transform → Load (ETL) architecture, fully executable both locally and inside Docker, ensuring reproducibility.
 
-The solution follows a classic Extract → Transform → Load (ETL) structure, fully executable locally and packaged in Docker for reproducibility.
+API Mock (JSON)
+        ↓
+     Raw Layer
+        ↓
+Transformations (Pandas + DuckDB)
+        ↓
+ Partitioned Curated Layer (Parquet)
+            
+Users CSV + Products CSV ┘
 
-API Mock (JSON) → Raw Layer → Transformations → Curated Layer (Partitioned)
-           CSV Users + CSV Products ┘
-
-
-The ETL can be executed via:
-
+The ETL can be executed through:
 python -m src.etl_job
 python -m src.etl_job --since <timestamp>
 
-
-All output is written under output/raw/ and output/curated/.
+Outputs stored in:
+output/raw/
+output/curated/
 
 2. Extraction
-Sources
+Sources:
+- api_orders.json — simulated REST API response.
+- users.csv / products.csv — dimension tables.
 
-api_orders.json simulates the REST API.
-
-users.csv and products.csv are flat-database representations.
-
-Error Handling
-
-APIClient includes:
-
-Retry mechanism (3 attempts)
-
-Delay between retries
-
-Logging of failures
-
-Malformed JSON records do not break execution.
+API robustness:
+- Retry mechanism
+- Delay between retries
+- Handles malformed JSON
+- Complete logging
 
 3. Transformations
-Normalization
+Normalization:
+- orders_df → one row per order
+- items_df → one row per item
 
-Orders from the API contain nested structures (items array).
-They are normalized into two DataFrames:
+Derived fields:
+- date extracted from created_at for partitioning
 
-orders_df
-Flattened representation of order headers.
+Record cleaning:
+- Discard orders missing order_id or created_at
+- Logs discarded count
 
-items_df
-One row per item inside items.
-
-Derived Fields
-
-date is extracted from created_at (YYYY-MM-DD) to support partitioning.
-
-Malformed Records
-
-Records lacking critical fields (order_id, created_at) are discarded.
-
-Count of discarded records is logged.
-
-Deduplication (Idempotency Principle #1)
-
-The API may contain duplicate order_id.
-
-We apply:
-
-dedupe(df, key="order_id")
-
-
-Always keeps the latest record.
+Deduplication:
+- dedupe(df, key="order_id")
+- Latest record wins (idempotency)
 
 4. Incremental Processing
+Executed using:
+python -m src.etl_job --since "2025-01-15T00:00:00Z"
 
-The ETL supports incremental execution via:
-
---since "2025-01-15T00:00:00Z"
-
-
-Implementation:
-
-Orders with created_at <= since are filtered out.
-
-Items are filtered by valid order_id.
-
-This reduces processing time and allows continuous ingestion.
+Incremental logic:
+- Filters orders by timestamp
+- Items kept only for surviving order_id
 
 5. Loading Strategy
-Raw Layer
-
-Exact copy of API input:
-
+Raw layer:
 output/raw/orders_raw.json
 
-Curated Layer
-
-Final analytical tables stored in Parquet.
-
-Partitioned by date:
-
+Curated layer (Parquet partitioned):
 output/curated/date=YYYY-MM-DD/fact_order.parquet
 output/curated/date=YYYY-MM-DD/order_items.parquet
 
-Idempotency (Principle #2: Replace Partitions)
-
-Each run overwrites the folder date=YYYY-MM-DD/.
-This guarantees that repeated runs produce consistent results without duplicates.
+Partitions are overwritten each run (idempotent).
 
 6. Data Model (Redshift-Compatible)
-dim_user
-user_id (PK)
-email
-created_at
-country
-
-dim_product
-sku (PK)
-name
-category
-price
-
-fact_order
-order_id (PK)
-user_id (FK)
-sku (FK)
-amount
-qty
-price
-created_at
-date (partition key)
-
-
-The model supports analytical workloads such as sales aggregation, product performance, and user behavior analysis.
+dim_user: user_id, email, created_at, country
+dim_product: sku, name, category, price
+fact_order: order_id, user_id, sku, amount, qty, price, created_at, date
 
 7. Monitoring & Logging
+Logs:
+- Run start/end
+- Extracted records
+- Discarded records
+- Partitions written
+- API retry attempts
 
-The ETL logs:
-
-Start/end timestamps
-
-Records extracted
-
-Records discarded
-
-Partitions written
-
-Retry attempts for API calls
-
-These logs can easily be extended to metrics for production environments.
-
-Alerting examples for production:
-
-API retry exhaustion
-
-No new records in incremental loads
-
-High percentage of discarded records
+Production alerts would include:
+- Retry exhaustion
+- No new incremental data
+- High discard percentage
 
 8. Technology Choices
-Pandas + PyArrow
+Pandas + PyArrow + DuckDB:
+Reasons:
 
-Reasoning:
-
-Lightweight for local execution.
-
-Simple to test, debug, and document.
-
-Works extremely well with Parquet.
-
-Faster development compared to PySpark for this scale.
+- Fast local execution
+- Extremely lightweight
+- Ideal for medium-volume analytical tasks
+- Simpler than PySpark, but with high performance
+- Supports Parquet natively
 
 Docker
 
-Ensures reproducibility regardless of host environment.
+Benefits:
 
-Evaluators can run the project with:
+- Fully reproducible environment
+- Evaluators can run the project without installing Python or dependencies
+- Matches real-world CI/CD and deployment patterns
 
+Execution example:
 docker-compose run --rm app python -m src.etl_job

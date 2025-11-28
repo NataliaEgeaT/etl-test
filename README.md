@@ -1,18 +1,23 @@
 # ETL Technical Test – Data Engineer
-This project implements a reproducible ETL pipeline using **Python + Pandas**, delivering a complete **raw** and **curated** data processing workflow, following all mandatory requirements from the technical test.
+This project implements a reproducible ETL pipeline using **Python + Pandas + DuckDB**, delivering a complete **raw** and **curated** data processing workflow, following all mandatory requirements from the technical test.
 
-The solution runs:
+# 🚀 Features
 
-- ✅ Locally (Python)  
+- ✅ Locally (Python + DuckDB warehouse)  
 - ✅ Inside Docker (MSSQL + ETL)  
+- Full architecture and technical decisions are documented in:
+
+📄 `docs/design_notes.md`
 
 # Project Structure
 
+```
 etl-test/
 ├─ README.md
 ├─ requirements.txt
 ├─ Dockerfile
 ├─ docker-compose.yml
+├─ run_checks.sh
 │
 ├─ src/
 │  ├─ etl_job.py
@@ -38,6 +43,7 @@ etl-test/
 │
 └─ docs/
    └─ design_notes.md
+```
 
 # How to Run the Project Locally
 
@@ -94,6 +100,12 @@ docker-compose run --rm app python -m src.etl_job --since "2025-01-01T00:00:00Z"
 # Run Tests
 ```
 PYTHONPATH=. pytest -q
+```
+
+# Run all checks
+
+```
+./run_checks.sh
 ```
 
 # SQL – Warehouse Tables
