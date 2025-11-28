@@ -136,3 +136,43 @@ Why DuckDB?
 - Excellent performance for OLAP workloads
 - Perfect fit for local ETL prototypes and analytical pipelines
 - Keeps the solution fully reproducible in Docker
+
+10. Trade-offs
+
+Pandas + DuckDB vs PySpark
+
+- Pros: Lightweight, fast for local execution, simple to package in Docker.
+- Cons: Less suitable for very large-scale distributed workloads.
+- Reasoning: The assignment targets a local, reproducible ETL, not cluster-scale processing.
+
+Date-partitioned overwrite
+
+- Pros: Guarantees idempotency and keeps output Redshift-friendly.
+- Cons: Overwriting a full partition may be expensive on very large datasets.
+- Reasoning: Simplicity and reliability outweigh the cost at this scale.
+
+Dedupe using latest order_id
+
+- Pros: Clear, deterministic, avoids duplicates.
+- Cons: Loses historical variations of the same order.
+- Reasoning: The goal is a clean, idempotent fact table, not audit-level history.
+
+Embedded DuckDB
+
+- Pros: Zero setup, fast OLAP reads, fully reproducible.
+- Cons: Not designed for multi-user or distributed environments.
+- Reasoning: Ideal for a local ETL prototype and evaluator convenience.
+
+Parquet for curated data
+
+- Pros: Efficient, columnar, compatible with analytical engines and Redshift COPY.
+- Cons: Less human-readable than JSON.
+- Reasoning: Performance and interoperability are more important at this stage.
+
+11. Missing metadata and missing item price
+
+The pipeline handles missing optional fields gracefully:
+
+- Missing metadata: The field is treated as null and preserved as-is without blocking ingestion.
+- Missing items.price: The record is still processed; price is set to null and logged, since quantity and SKU are sufficient for the fact table.
+- Malformed records (missing order_id or created_at) are discarded, and the number of discarded records is logged.
