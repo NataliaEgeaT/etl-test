@@ -4,4 +4,4 @@ venv/
 __pycache__/
 .DS_Store  # macOS specific ignore
 .vscode/
-
+duckdb_db/
