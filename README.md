@@ -4,7 +4,8 @@ This project implements a reproducible ETL pipeline using **Python + Pandas + Du
 # 🚀 Features
 
 - ✅ Locally (Python + DuckDB warehouse)  
-- ✅ Inside Docker (MSSQL + ETL)  
+- ✅ Inside Docker
+- 🚫 No external databases required (DuckDB embedded)
 - Full architecture and technical decisions are documented in:
 
 📄 `docs/design_notes.md`
@@ -24,7 +25,6 @@ etl-test/
 │  ├─ api_client.py
 │  ├─ transforms.py
 │  ├─ db.py
-|  ├─ mssql_client.py 
 │  └─ utils.py
 │
 ├─ sample_data/
@@ -47,6 +47,7 @@ etl-test/
 
 # How to Run the Project Locally
 
+
 ## 1. Create a virtual environment
 Linux/Mac:
 ```
@@ -59,6 +60,7 @@ Windows:
 python -m venv venv
 venv\Scripts\activate
 ```
+
 
 ## 2. Install dependencies
 ```

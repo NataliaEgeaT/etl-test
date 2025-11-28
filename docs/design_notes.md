@@ -19,6 +19,7 @@ Outputs stored in:
 output/raw/
 output/curated/
 
+
 2. Extraction
 Sources:
 - api_orders.json — simulated REST API response.
@@ -102,3 +103,36 @@ Benefits:
 
 Execution example:
 docker-compose run --rm app python -m src.etl_job
+
+9. Local Database Layer (DuckDB)
+
+The ETL solution embeds a lightweight analytical database using DuckDB, enabling persistent storage of dimension data without requiring an external SQL Server instance.
+
+Purpose
+
+DuckDB serves as the internal warehouse for:
+
+- users dimension
+- products dimension
+
+These datasets are required during transformations but do not originate from the API source.
+
+Initialization Process
+
+The file:
+
+duckdb_db/warehouse.db is automatically created on first execution.
+
+The initialization script (init_database() inside db.py):
+
+- Creates the tables users and products if they do not exist.
+- Inserts seed data only when the tables are empty (idempotent initialization).
+- Ensures ETL runs cleanly on any machine without pre-loading a database.
+
+Why DuckDB?
+
+- Zero setup for evaluators
+- Fully cross-platform
+- Excellent performance for OLAP workloads
+- Perfect fit for local ETL prototypes and analytical pipelines
+- Keeps the solution fully reproducible in Docker
