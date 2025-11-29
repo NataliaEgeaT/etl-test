@@ -100,15 +100,26 @@ docker-compose run --rm app python -m src.etl_job --since "2025-01-01T00:00:00Z"
 ```
 
 # Run Tests
+Linux/Mac:
 ```
 PYTHONPATH=. pytest -q
 ```
+Windows:
+```
+set PYTHONPATH=. pytest -q
+```
 
 # Run all checks
-
+Linux/Mac:
 ```
 ./run_checks.sh
 ```
+
+Windows:
+```
+bash run_checks.sh
+```
+
 
 # SQL – Warehouse Tables
 DDL located at:
